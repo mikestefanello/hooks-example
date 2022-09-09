@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -53,6 +54,13 @@ func (w *web) buildRouter() {
 
 	// Allow all modules to build on the router
 	HookBuildRouter.Dispatch(w.handler)
+
+	// Output the routes to the log
+	routes := make([]string, len(w.handler.Routes()))
+	for i, r := range w.handler.Routes() {
+		routes[i] = fmt.Sprintf("%s_%s", r.Method, r.Path)
+	}
+	log.Printf("registered routes: %v", routes)
 }
 
 func (w *web) Start() error {
