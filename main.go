@@ -12,6 +12,7 @@ import (
 	_ "github.com/mikestefanello/hooks-example/services/config"
 	"github.com/mikestefanello/hooks-example/services/web"
 	// All modules
+	_ "github.com/mikestefanello/hooks-example/modules/analytics"
 	_ "github.com/mikestefanello/hooks-example/modules/todo"
 )
 
