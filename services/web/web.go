@@ -19,7 +19,7 @@ type (
 
 	web struct {
 		handler *echo.Echo
-		cfg     *config.Config
+		cfg     config.Config
 	}
 )
 
@@ -34,7 +34,7 @@ func init() {
 func NewWeb(i *do.Injector) (Web, error) {
 	w := &web{
 		handler: echo.New(),
-		cfg:     do.MustInvoke[*config.Config](i),
+		cfg:     do.MustInvoke[config.Config](i),
 	}
 	w.buildRouter()
 
@@ -56,12 +56,14 @@ func (w *web) buildRouter() {
 }
 
 func (w *web) Start() error {
+	httpCfg := w.cfg.GetHTTP()
+
 	srv := http.Server{
-		Addr:         fmt.Sprintf("%s:%d", w.cfg.HTTP.Hostname, w.cfg.HTTP.Port),
+		Addr:         fmt.Sprintf("%s:%d", httpCfg.Hostname, httpCfg.Port),
 		Handler:      w.handler,
-		ReadTimeout:  w.cfg.HTTP.ReadTimeout,
-		WriteTimeout: w.cfg.HTTP.WriteTimeout,
-		IdleTimeout:  w.cfg.HTTP.IdleTimeout,
+		ReadTimeout:  httpCfg.ReadTimeout,
+		WriteTimeout: httpCfg.WriteTimeout,
+		IdleTimeout:  httpCfg.IdleTimeout,
 	}
 
 	return w.handler.StartServer(&srv)

@@ -10,8 +10,13 @@ import (
 )
 
 type (
-	// Config stores complete configuration
-	Config struct {
+	Config interface {
+		GetHTTP() HTTPConfig
+		GetApp() AppConfig
+	}
+
+	// Base stores complete configuration
+	Base struct {
 		HTTP HTTPConfig
 		App  AppConfig
 	}
@@ -38,8 +43,16 @@ func init() {
 	})
 }
 
-func NewConfig(i *do.Injector) (*Config, error) {
-	var cfg Config
+func NewConfig(i *do.Injector) (Config, error) {
+	var cfg Base
 	err := envdecode.StrictDecode(&cfg)
 	return &cfg, err
+}
+
+func (c *Base) GetHTTP() HTTPConfig {
+	return c.HTTP
+}
+
+func (c *Base) GetApp() AppConfig {
+	return c.App
 }
