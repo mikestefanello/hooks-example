@@ -9,6 +9,7 @@ import (
 	"github.com/mikestefanello/hooks-example/pkg/app"
 
 	// All services
+	_ "github.com/mikestefanello/hooks-example/services/cache"
 	_ "github.com/mikestefanello/hooks-example/services/config"
 	"github.com/mikestefanello/hooks-example/services/web"
 	// All modules

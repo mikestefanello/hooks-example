@@ -1,13 +1,12 @@
 package analytics
 
 import (
-	"sync"
-
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	"github.com/mikestefanello/hooks"
 	"github.com/mikestefanello/hooks-example/modules/todo"
 	"github.com/mikestefanello/hooks-example/pkg/app"
+	"github.com/mikestefanello/hooks-example/services/cache"
 	"github.com/mikestefanello/hooks-example/services/web"
 	"github.com/samber/do"
 )
@@ -30,8 +29,7 @@ type (
 	}
 
 	analyticsService struct {
-		analytics Analytics
-		mu        sync.RWMutex
+		cache cache.Cache
 	}
 
 	analyticsHandler struct {

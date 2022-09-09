@@ -1,36 +1,57 @@
 package analytics
 
 import (
-	"sync"
-
+	"github.com/mikestefanello/hooks-example/services/cache"
 	"github.com/samber/do"
 )
 
+const cacheKey = "analytics"
+
 func NewAnalyticsService(i *do.Injector) (Service, error) {
 	return &analyticsService{
-		analytics: Analytics{},
-		mu:        sync.RWMutex{},
+		cache: do.MustInvoke[cache.Cache](i),
 	}, nil
 }
 
 func (a *analyticsService) GetAnalytics() (Analytics, error) {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.analytics, nil
+	return a.load(), nil
 }
 
 func (a *analyticsService) IncrementWebRequests() error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	data := a.load()
+	data.WebRequests++
 
-	a.analytics.WebRequests++
+	if err := a.save(data); err != nil {
+		return nil
+	}
+
+	HookAnalyticsUpdate.Dispatch(data)
+
 	return nil
 }
 
 func (a *analyticsService) IncrementEntities() error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	data := a.load()
+	data.Entities++
 
-	a.analytics.Entities++
+	if err := a.save(data); err != nil {
+		return nil
+	}
+
+	HookAnalyticsUpdate.Dispatch(data)
+
 	return nil
+}
+
+func (a *analyticsService) load() Analytics {
+	data, err := a.cache.Get(cacheKey)
+	if err != nil {
+		return Analytics{}
+	}
+
+	return data.(Analytics)
+}
+
+func (a *analyticsService) save(data Analytics) error {
+	return a.cache.Set(cacheKey, data)
 }
