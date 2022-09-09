@@ -8,6 +8,7 @@ import (
 	"github.com/samber/do"
 )
 
+// NewTodoHandler provides a new todo Handler instance
 func NewTodoHandler(i *do.Injector) (Handler, error) {
 	return &todoHandler{
 		service: do.MustInvoke[Service](i),

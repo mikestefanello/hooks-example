@@ -9,6 +9,7 @@ import (
 
 const cacheKey = "todos"
 
+// NewTodoService creates a new todo Service instance
 func NewTodoService(i *do.Injector) (Service, error) {
 	return &todoService{
 		cache: do.MustInvoke[cache.Cache](i),

@@ -10,8 +10,12 @@ import (
 )
 
 type (
+	// Config provides system configuration
 	Config interface {
+		// GetHTTP returns HTTP configuration
 		GetHTTP() HTTPConfig
+
+		// GetApp returns App configuration
 		GetApp() AppConfig
 	}
 
@@ -38,21 +42,25 @@ type (
 )
 
 func init() {
+	// Provide dependencies during app boot process
 	app.HookBoot.Listen(func(e hooks.Event[*do.Injector]) {
 		do.Provide(e.Msg, NewConfig)
 	})
 }
 
+// NewConfig creates a new Config instance
 func NewConfig(i *do.Injector) (Config, error) {
 	var cfg Base
 	err := envdecode.StrictDecode(&cfg)
 	return &cfg, err
 }
 
+// GetHTTP returns HTTP configuration
 func (c *Base) GetHTTP() HTTPConfig {
 	return c.HTTP
 }
 
+// GetApp returns app configuration
 func (c *Base) GetApp() AppConfig {
 	return c.App
 }

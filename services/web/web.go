@@ -14,7 +14,9 @@ import (
 )
 
 type (
+	// Web provides a web server
 	Web interface {
+		// Start starts the web server and will block until it is stopped
 		Start() error
 	}
 
@@ -24,14 +26,17 @@ type (
 	}
 )
 
+// HookBuildRouter allows modules the ability to build on the web router
 var HookBuildRouter = hooks.NewHook[*echo.Echo]("router.build")
 
 func init() {
+	// Provide dependencies during app boot process
 	app.HookBoot.Listen(func(e hooks.Event[*do.Injector]) {
 		do.Provide(e.Msg, NewWeb)
 	})
 }
 
+// NewWeb creates a new Web instance
 func NewWeb(i *do.Injector) (Web, error) {
 	w := &web{
 		handler: echo.New(),
@@ -42,6 +47,7 @@ func NewWeb(i *do.Injector) (Web, error) {
 	return w, nil
 }
 
+// buildRouter builds the web router
 func (w *web) buildRouter() {
 	w.handler.Use(
 		middleware.RequestID(),
@@ -60,9 +66,10 @@ func (w *web) buildRouter() {
 	for i, r := range w.handler.Routes() {
 		routes[i] = fmt.Sprintf("%s_%s", r.Method, r.Path)
 	}
-	log.Printf("registered routes: %v", routes)
+	log.Printf("registered %d routes: %v", len(routes), routes)
 }
 
+// Start starts the web server and will block until it is stopped
 func (w *web) Start() error {
 	httpCfg := w.cfg.GetHTTP()
 

@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
 	"github.com/samber/do"
 )
 
@@ -24,10 +23,10 @@ func (a *analyticsHandler) Get(ctx echo.Context) error {
 }
 
 func (a *analyticsHandler) WebRequestMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(ctx echo.Context) error {
 		if err := a.service.IncrementWebRequests(); err != nil {
-			log.Error(err)
+			ctx.Logger().Error(err)
 		}
-		return next(c)
+		return next(ctx)
 	}
 }
