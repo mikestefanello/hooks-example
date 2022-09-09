@@ -1,11 +1,10 @@
 package todo
 
 import (
-	"sync"
-
 	"github.com/labstack/echo/v4"
 	"github.com/mikestefanello/hooks"
 	"github.com/mikestefanello/hooks-example/pkg/app"
+	"github.com/mikestefanello/hooks-example/services/cache"
 	"github.com/mikestefanello/hooks-example/services/web"
 	"github.com/samber/do"
 )
@@ -30,8 +29,7 @@ type (
 	}
 
 	todoService struct {
-		todos []Todo
-		mu    sync.RWMutex
+		cache cache.Cache
 	}
 
 	todoHandler struct {

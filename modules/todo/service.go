@@ -2,43 +2,58 @@ package todo
 
 import (
 	"errors"
-	"sync"
 
+	"github.com/mikestefanello/hooks-example/services/cache"
 	"github.com/samber/do"
 )
 
+const cacheKey = "todos"
+
 func NewTodoService(i *do.Injector) (Service, error) {
 	return &todoService{
-		todos: make([]Todo, 0),
-		mu:    sync.RWMutex{},
+		cache: do.MustInvoke[cache.Cache](i),
 	}, nil
 }
 
 func (t *todoService) GetTodo(id int) (Todo, error) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
+	todos := t.load()
 
-	if len(t.todos) < id+1 {
+	if len(todos) < id+1 {
 		return Todo{}, errors.New("not found")
 	}
-	return t.todos[id], nil
+
+	return todos[id], nil
 }
 
 func (t *todoService) GetTodos() ([]Todo, error) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.todos, nil
+	return t.load(), nil
 }
 
 func (t *todoService) InsertTodo(todo *Todo) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	todos := t.load()
 
-	todo.ID = len(t.todos)
+	todo.ID = len(todos)
 	HookTodoPreInsert.Dispatch(todo)
 
-	t.todos = append(t.todos, *todo)
+	todos = append(todos, *todo)
+	if err := t.save(todos); err != nil {
+		return err
+	}
+
 	HookTodoInsert.Dispatch(*todo)
 
 	return nil
+}
+
+func (t *todoService) load() []Todo {
+	data, err := t.cache.Get(cacheKey)
+	if err != nil {
+		return make([]Todo, 0)
+	}
+
+	return data.([]Todo)
+}
+
+func (t *todoService) save(todos []Todo) error {
+	return t.cache.Set(cacheKey, todos)
 }
