@@ -33,6 +33,8 @@ See the `func init()` within the primary, self-named _.go_ file of each module t
 
 ## Hooks
 
+### Dispatchers
+
 - `pkg/app`
   - `HookBoot`: Indicates that the application is booting and allow dependencies to be registered across the entire application via `*do.Injector`.
 - `services/web`
@@ -42,6 +44,20 @@ See the `func init()` within the primary, self-named _.go_ file of each module t
   - `HookTodoInsert`: Dispatched after a new _todo_ is inserted.
 - `modules/analytics`
   - `HookAnalyticsUpdate`: Dispatched when the analytics data is updated.
+
+### Listeners
+
+- `HookBoot`
+  - `services/cache`: Registers a cache backend as a dependency.
+  - `services/config`: Registers configuration as a dependency.
+  - `services/web`: Registers a web server as a dependency.
+  - `modules/analytics`: Registers analytics service and HTTP handler as dependencies.
+  - `modules/todo`: Registers todo service and HTTP handler as dependencies.
+- `HookBuildRouter`
+  - `modules/analytics`: Registers web route and tracker middleware for analytics.
+  - `modules/todo`: Registers web routes for todos.
+- `HookTodoInsert`
+  - `modules/analytics`: Increments analytics entity count when todos are created.
 
 ## Boot process and registration
 
@@ -74,5 +90,23 @@ To help illustrate the app boot process:
 ```
 
 ## Optional independent binaries
+
+@todo
+
+## Run the application
+
+`go run main.go`
+
+### Endpoints
+
+_NOTE:_ Data created is stored in memory and will be lost when the application restarts.
+
+- `GET /`: Hello world
+- `GET /todo`: Get all _todos_
+- `GET /todo/:todo`: Get a _todo_ by ID
+- `POST /todo`: Create a todo
+- `GET /analytics`: Get analytics
+
+## Downsides
 
 @todo
