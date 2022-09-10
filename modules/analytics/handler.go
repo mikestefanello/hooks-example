@@ -7,6 +7,7 @@ import (
 	"github.com/samber/do"
 )
 
+// NewAnalyticsHandler provides a new analytics Handler instance
 func NewAnalyticsHandler(i *do.Injector) (Handler, error) {
 	return &analyticsHandler{
 		service: do.MustInvoke[Service](i),

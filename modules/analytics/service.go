@@ -7,6 +7,7 @@ import (
 
 const cacheKey = "analytics"
 
+// NewAnalyticsService creates a new analytics Service instance
 func NewAnalyticsService(i *do.Injector) (Service, error) {
 	return &analyticsService{
 		cache: do.MustInvoke[cache.Cache](i),

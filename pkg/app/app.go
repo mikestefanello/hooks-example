@@ -20,10 +20,8 @@ func init() {
 func Boot() *do.Injector {
 	HookBoot.Dispatch(do.DefaultInjector)
 
-	log.Printf("registered %d dependencies: %v",
-		len(do.DefaultInjector.ListProvidedServices()),
-		do.DefaultInjector.ListProvidedServices(),
-	)
+	d := do.DefaultInjector.ListProvidedServices()
+	log.Printf("registered %d dependencies: %v", len(d), d)
 
 	return do.DefaultInjector
 }
