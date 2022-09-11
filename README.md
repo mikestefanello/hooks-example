@@ -4,7 +4,12 @@
 
 Aside from just providing usage examples for the [hooks](https://github.com/mikestefanello/hooks) library, this is an exploration in modular monolithic architectural patterns in Go by leveraging both [hooks](https://github.com/mikestefanello/hooks) and [do](https://github.com/samber/do) _(for dependency injection)_.  It's recommended you review and understand these libraries prior to reviewing this repository. [Do](https://github.com/samber/do) is not required to achieve the pattern illustrated in this application, but I find it to be a very helpful and elegant approach.
 
-I'm by no means advocating (at this time) for this specific approach but rather using this as an experiment and place to iterate with these ideas. 
+I'm by no means advocating (at this time) for this specific approach but rather using this as an experiment and place to iterate with these ideas. I have had a lot of success with modular monoliths with languages and frameworks prior to learning Go and I haven't come across any similar patterns within the Go ecosystem. While microservices have become more prominent, a modular monolith can not only be a better choice in certain circumstances, but if done well, can make transitioning to microservices easier.
+
+The overall goals of this approach are:
+1) Create self-contained _modules_ that represent segments of business logic.
+2) Avoid any patterns that reach across the codebase (ie, the entrypoint being used to initialize all dependencies, a router that initializes all handlers and routes, etc).
+3) Modules should be able to be added and removed without having to touch the _core_ codebase at all.
 
 ## Repo structure
 
@@ -88,15 +93,17 @@ main.go/              app.Boot()
 ├─ modules/todo:      ├─  Register dependency: *todo.Handler
 
 main.go/              server := do.MustInvoke[web.Web](i)
-├─ services/web.go:   [Dispatch] HookRouterBuild
-├─ modules/analytics: ├─  Register web routes and middleware
-                      ├───  Initialize *analytics.Handler
-                      ├─────  Initialize *analytics.Service
-                      ├───────  Initialize *cache.Cache  
-├─ modules/todo:      ├─  Register web routes
-                      ├───  Initialize *todo.Handler
-                      ├─────  Initialize *todo.Service
-                      ├───────  Initialize *cache.Cache  
+├─ services/web.go:   ├─  Initialize *web.Web
+├                     ├───  Initialize *config.Config
+├                     ├───  [Dispatch] HookRouterBuild
+├─ modules/analytics:      ├─  Register web routes and middleware
+├                          ├───  Initialize *analytics.Handler
+├                          ├─────  Initialize *analytics.Service
+├                          ├───────  Initialize *cache.Cache  
+├─ modules/todo:           ├─  Register web routes
+├                          ├───  Initialize *todo.Handler
+├                          ├─────  Initialize *todo.Service
+├                          ├───────  Initialize *cache.Cache  
 ```
 
 ## Imports
@@ -139,6 +146,35 @@ To help illustrate the app boot process:
 2022/09/09 15:50:22 dispatching hook router.build to 2 listeners (async: false)
 2022/09/09 15:50:22 dispatch to hook router.build complete
 2022/09/09 15:50:22 registered 5 routes: [GET_/ GET_/todo GET_/todo/:todo POST_/todo GET_/analytics]
+```
+
+### Module registration
+
+Below is the code used by the `analytics` module to register itself:
+
+```go
+func init() {
+    // Provide dependencies during app boot process
+    app.HookBoot.Listen(func(e hooks.Event[*do.Injector]) {
+        do.Provide(e.Msg, NewAnalyticsService)
+        do.Provide(e.Msg, NewAnalyticsHandler)
+    })
+
+    // Provide web routes
+    web.HookBuildRouter.Listen(func(e hooks.Event[*echo.Echo]) {
+        h := do.MustInvoke[Handler](do.DefaultInjector)
+        e.Msg.GET("/analytics", h.Get)
+        e.Msg.Use(h.WebRequestMiddleware)
+    })
+
+    // React to new todos being inserted
+    todo.HookTodoInsert.Listen(func(e hooks.Event[todo.Todo]) {
+        h := do.MustInvoke[Service](do.DefaultInjector)
+        if err := h.IncrementEntities(); err != nil {
+            log.Error(err)
+        }
+    })
+}
 ```
 
 ## Optional independent binaries
