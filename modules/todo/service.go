@@ -41,7 +41,7 @@ func (t *todoService) InsertTodo(todo *Todo) error {
 		return err
 	}
 
-	HookTodoInsert.Dispatch(*todo)
+	HookTodoInsert.DispatchAsync(*todo)
 
 	return nil
 }

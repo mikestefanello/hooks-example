@@ -2,9 +2,9 @@
 
 ## Overview
 
-Aside from just providing usage examples for the [hooks](https://github.com/mikestefanello/hooks) library, this is an exploration in modular monolithic architectural patterns in Go by leveraging both [hooks](https://github.com/mikestefanello/hooks) and [do](https://github.com/samber/do) _(for dependency injection)_.  It's recommended you review and understand these libraries prior to reviewing this repository.
+Aside from just providing usage examples for the [hooks](https://github.com/mikestefanello/hooks) library, this is an exploration in modular monolithic architectural patterns in Go by leveraging both [hooks](https://github.com/mikestefanello/hooks) and [do](https://github.com/samber/do) _(for dependency injection)_.  It's recommended you review and understand these libraries prior to reviewing this repository. [Do](https://github.com/samber/do) is not required to achieve the pattern illustrated in this application, but I find it to be a very helpful and elegant approach.
 
-@todo
+I'm by no means advocating (at this time) for this specific approach but rather using this as an experiment and place to iterate with these ideas. 
 
 ## Repo structure
 
@@ -61,7 +61,59 @@ See the `func init()` within the primary, self-named _.go_ file of each module t
 
 ## Boot process and registration
 
-@todo
+Below is an attempt to illustrate how the entire application self-registers starting from a single hook that is invoked.
+
+### Code
+
+```go
+func main() {
+  i := app.Boot()
+  
+  server := do.MustInvoke[web.Web](i)
+  _ = server.Start()
+}
+```
+
+### Walkthrough
+
+```
+main.go/              app.Boot()
+├─ pkg/app.go:        [Dispatch] HookBoot 
+├─ services/cache.go  ├─  Register dependency: *cache.Cache
+├─ services/config.go ├─  Register dependency: *config.Config
+├─ services/web.go    ├─  Register dependency: *web.Web
+├─ modules/analytics: ├─  Register dependency: *analytics.Service
+├─ modules/analytics: ├─  Register dependency: *analytics.Handler
+├─ modules/todo:      ├─  Register dependency: *todo.Service
+├─ modules/todo:      ├─  Register dependency: *todo.Handler
+
+main.go/              server := do.MustInvoke[web.Web](i)
+├─ services/web.go:   [Dispatch] HookRouterBuild
+├─ modules/analytics: ├─  Register web routes and middleware
+                      ├───  Initialize *analytics.Handler
+                      ├─────  Initialize *analytics.Service
+                      ├───────  Initialize *cache.Cache  
+├─ modules/todo:      ├─  Register web routes
+                      ├───  Initialize *todo.Handler
+                      ├─────  Initialize *todo.Service
+                      ├───────  Initialize *cache.Cache  
+```
+
+## Imports
+
+It's important to note that if you want a module or service to self-register, it must be imported. This is why you see this in `main.go`:
+
+```go
+// Services
+_ "github.com/mikestefanello/hooks-example/services/cache"
+_ "github.com/mikestefanello/hooks-example/services/config"
+"github.com/mikestefanello/hooks-example/services/web"
+// Modules
+_ "github.com/mikestefanello/hooks-example/modules/analytics"
+_ "github.com/mikestefanello/hooks-example/modules/todo"
+```
+
+This is needed to ensure that `init()` executes in each package which is what they are using to listen to hooks.
 
 ### Logs
 
@@ -91,7 +143,9 @@ To help illustrate the app boot process:
 
 ## Optional independent binaries
 
-@todo
+It is possible to create separate entrypoints that only register one or some of your modules, allowing for a monolithic codebase that could be used to create separate applications/services.
+
+For example, in `main.go`, simply remove the import `_ "github.com/mikestefanello/hooks-example/modules/analytics"` and the application will run without the `analytics` modules (and everything within it).
 
 ## Run the application
 
@@ -109,4 +163,6 @@ _NOTE:_ Data created is stored in memory and will be lost when the application r
 
 ## Downsides
 
-@todo
+Nothing is without downsides and this approach certainly has them. It lacks overall explicitness by hiding details within hook listeners and by injecting all dependencies inside a single container. It could make understanding and debugging the codebase harder than one following a very straight-forward approach, especially since you lose some power of your IDE. This certainly goes a bit against the overall philosophy of Go itself. It's also hard to tell how well this would scale with a large codebase and even with multiple development teams.
+
+But there are pros, in my opinion. I'll leave it to the reader to make their own judgements and I encourage you to share them here.

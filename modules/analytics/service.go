@@ -39,7 +39,7 @@ func (a *analyticsService) IncrementEntities() error {
 		return nil
 	}
 
-	HookAnalyticsUpdate.Dispatch(data)
+	HookAnalyticsUpdate.DispatchAsync(data)
 
 	return nil
 }
